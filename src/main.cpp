@@ -5,6 +5,7 @@
 #include <ESP8266HTTPClient.h>
 #include <WiFiClient.h>
 #include <WifiClientSecure.h>
+#include <WiFiManager.h>
 
 
 
@@ -15,7 +16,8 @@ int sensorValue;
 
 const char* ssid = "Horký beďar";
 const char* password = "33333333";
-String serverName = "https://www.bartosek.cz/shared/OFD/api/?secret=heslo";
+String serverName = "https://www.bartosek.cz/shared/testEnv/OFD-API-ESP8266/api/";
+String secret = "1234567890";
 
 // the following variables are unsigned longs because the time, measured in
 // milliseconds, will quickly become a bigger number than can be stored in an int.
@@ -25,7 +27,7 @@ unsigned long lastTime = 0;
 // Set timer to 5 seconds (5000)
 unsigned long timerDelay = 5000;
 
-
+WiFiManager wifiManager;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 // lcd.setCursor(´Pozice na řádku, řádek´);
 
@@ -37,7 +39,9 @@ void setup() {
 
   Serial.begin(9600);
 
-  WiFi.begin(ssid, password);
+  wifiManager.autoConnect("AutoConnectAP");
+
+
 
 
   Serial.println("Connecting");
@@ -78,58 +82,44 @@ void setup() {
 }
 
 
+void request(bool _state) {
+
+  String state = _state ? "True" : "False";
+
+  WiFiClientSecure client;
+  client.setInsecure();
+  HTTPClient http;
+
+  String serverPath = serverName + "?secret=" + secret + "&switch=" + state;
+
+  http.begin(client, serverPath.c_str());
+
+  int httpResponseCode = http.GET();
+
+  if (httpResponseCode>0) {
+    Serial.print("HTTP Response code: ");
+    Serial.println(httpResponseCode);
+  }
+  else {
+    Serial.print("Error code: ");
+    Serial.println(httpResponseCode);
+  }
+  // Free resources
+  http.end();
+
+}
+
+
 
 void loop() {
 
-if ((millis() - lastTime) > timerDelay) {
-    //Check WiFi connection status
-    if(WiFi.status()== WL_CONNECTED){
-      WiFiClientSecure client;
-      client.setInsecure();
-      HTTPClient http;
+  sensorValue = digitalRead(SENSOR_PIN);
 
+  digitalWrite(LED_PIN, sensorValue);
 
-      String serverPath = serverName;
+  lcd.setCursor(0,1);
+  lcd.print(sensorValue);
 
-      // Your Domain name with URL path or IP address with path
-      http.begin(client, serverPath.c_str());
-
-      // If you need Node-RED/server authentication, insert user and password below
-      //http.setAuthorization("REPLACE_WITH_SERVER_USERNAME", "REPLACE_WITH_SERVER_PASSWORD");
-
-      // Send HTTP GET request
-      int httpResponseCode = http.GET();
-
-      if (httpResponseCode>0) {
-        Serial.print("HTTP Response code: ");
-        Serial.println(httpResponseCode);
-        String payload = http.getString();
-        Serial.println(payload);
-      }
-      else {
-        Serial.print("Error code: ");
-        Serial.println(httpResponseCode);
-      }
-      // Free resources
-      http.end();
-    }
-    else {
-      Serial.println("WiFi Disconnected");
-    }
-    lastTime = millis();
-  }
-
-
-
-
-
-
-
-
-
-  // digitalWrite(LED_PIN, digitalRead(SENSOR_PIN));
-
-  // lcd.setCursor(0,1);
-  // lcd.print(digitalRead(SENSOR_PIN));
+  request(sensorValue);
 
 }
