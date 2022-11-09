@@ -13,7 +13,6 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 // lcd.setCursor(´Pozice na řádku, řádek´);
 
 
-
 void setup() {
 
   pinMode(LED_PIN, OUTPUT);
@@ -37,6 +36,8 @@ void setup() {
   lcd.setCursor(0,0);
   lcd.print("Sensor value: ");
 }
+
+
 
 void loop() {
 
