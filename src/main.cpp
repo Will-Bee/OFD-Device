@@ -19,12 +19,9 @@ const char* password = "33333333";
 String serverName = "https://www.bartosek.cz/shared/testEnv/OFD-API-ESP8266/api/";
 String secret = "1234567890";
 
-// the following variables are unsigned longs because the time, measured in
-// milliseconds, will quickly become a bigger number than can be stored in an int.
-unsigned long lastTime = 0;
-// Timer set to 10 minutes (600000)
-//unsigned long timerDelay = 600000;
-// Set timer to 5 seconds (5000)
+
+int lastTime = 0;
+
 unsigned long timerDelay = 5000;
 
 WiFiManager wifiManager;
@@ -109,17 +106,28 @@ void request(bool _state) {
 
 }
 
+void statusUpdateEvent(int state) {
+
+    lcd.setCursor(0,1);
+    lcd.print(state);
+
+  digitalWrite(LED_PIN, state);
+
+  request(state);
+
+}
+
 
 
 void loop() {
 
   sensorValue = digitalRead(SENSOR_PIN);
 
-  digitalWrite(LED_PIN, sensorValue);
+  // call statusUpdateEvent() on every change in sensor
 
-  lcd.setCursor(0,1);
-  lcd.print(sensorValue);
-
-  request(sensorValue);
+  if (sensorValue != lastTime) {
+    statusUpdateEvent(sensorValue);
+    lastTime = sensorValue;
+  }
 
 }
